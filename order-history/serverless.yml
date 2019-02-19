@@ -1,0 +1,69 @@
+service: cqrs-order-history
+
+plugins:
+  - serverless-offline-sns
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  dynamodb:
+    start:
+      migrate: true
+  serverless-offline-sns:
+    port: 4002
+    debug: true
+
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+  runtime: nodejs8.10
+  environment:
+    AWS_ACCOUNT_ID: '${ssm:accountId}'
+    STATE_TABLE: 'order-history-state-table-${self:provider.stage}'
+    SERVERLESS_REGION: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "sns:*"
+      Resource: "*"
+
+functions:
+  queryAll:
+    handler: queries.all
+    events:
+      - http: 'GET /order-history'
+  persistOrder:
+    handler: eventHandler.persistOrder
+    events:
+      - sns:
+          arn: 'arn:aws:sns:us-east-1:${ssm:accountId}:orders-events'
+  persistPayment:
+    handler: eventHandler.persistPayment
+    events:
+      - sns:
+          arn: 'arn:aws:sns:us-east-1:${ssm:accountId}:payment-events'
+
+resources:
+  Resources:
+    StateBooksDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: '${self:provider.environment.STATE_TABLE}'
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

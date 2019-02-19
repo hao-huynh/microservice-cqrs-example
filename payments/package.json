@@ -1,0 +1,19 @@
+{
+  "name": "cqrs-payments",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "sudo serverless offline start"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.185.0",
+    "serverless": "^1.26.0",
+    "uuid": "^3.2.1"
+  },
+  "devDependencies": {
+    "babel-preset-env": "^1.6.1",
+    "serverless-dynamodb-local": "0.2.35",
+    "serverless-offline": "^3.18.0",
+    "serverless-offline-sns": "^0.35.0"
+  }
+}
